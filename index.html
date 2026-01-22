@@ -1,0 +1,3239 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrackU - Suivi d'assiduité</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Staatliches&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #FF6B35;
+            --secondary: #004E89;
+            --accent: #F7B801;
+            --dark: #1A1A1D;
+            --light: #F5F5F5;
+            --success: #06D6A0;
+            --danger: #EF476F;
+            --grid: #E0E0E0;
+            
+            --font-display: 'Staatliches', cursive;
+            --font-mono: 'IBM Plex Mono', monospace;
+        }
+
+        body {
+            font-family: var(--font-mono);
+            background: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            background: var(--dark);
+            color: var(--light);
+            padding: 2rem 0;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            border-right: 4px solid var(--primary);
+        }
+
+        .logo {
+            font-family: var(--font-display);
+            font-size: 3rem;
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .logo-subtitle {
+            text-align: center;
+            font-size: 0.7rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 3rem;
+            opacity: 0.8;
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-item {
+            padding: 1rem 2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 107, 53, 0.1);
+            border-left-color: var(--primary);
+        }
+
+        .nav-item.active {
+            background: var(--primary);
+            color: var(--dark);
+            border-left-color: var(--accent);
+            font-weight: 700;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            padding: 2rem 3rem;
+            max-width: 1600px;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+            border-bottom: 3px solid var(--dark);
+            padding-bottom: 1rem;
+        }
+
+        .page-title {
+            font-family: var(--font-display);
+            font-size: 3.5rem;
+            color: var(--secondary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-subtitle {
+            font-size: 0.9rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* SECTIONS */
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* STATS CARDS */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 2rem;
+            border: 3px solid var(--dark);
+            box-shadow: 8px 8px 0 var(--dark);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #666;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-family: var(--font-display);
+            font-size: 3rem;
+            color: var(--secondary);
+            line-height: 1;
+        }
+
+        .stat-detail {
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: 0.5rem;
+        }
+
+        /* SCHEDULE GRID */
+        .schedule-container {
+            background: white;
+            border: 3px solid var(--dark);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .schedule-grid {
+            display: grid;
+            grid-template-columns: 80px repeat(5, 1fr);
+            gap: 2px;
+            background: var(--grid);
+            border: 2px solid var(--dark);
+        }
+
+        .schedule-header {
+            background: var(--dark);
+            color: var(--light);
+            padding: 1rem;
+            text-align: center;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+
+        .time-slot {
+            background: var(--light);
+            padding: 0.75rem 0.5rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.75rem;
+            color: var(--secondary);
+        }
+
+        .schedule-cell {
+            background: white;
+            padding: 0.5rem;
+            min-height: 60px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .schedule-cell:hover {
+            background: rgba(0, 78, 137, 0.05);
+        }
+
+        .course-block {
+            background: var(--primary);
+            color: white;
+            padding: 0.75rem;
+            border: 2px solid var(--dark);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .course-block::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent);
+        }
+
+        .course-block:hover {
+            transform: translateY(-2px);
+            box-shadow: 4px 4px 0 var(--dark);
+        }
+
+        .course-name {
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .course-info {
+            font-size: 0.7rem;
+            opacity: 0.9;
+        }
+
+        /* BUTTONS */
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: 3px solid var(--dark);
+            padding: 0.75rem 1.5rem;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
+            box-shadow: 4px 4px 0 var(--dark);
+        }
+
+        .btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 var(--dark);
+        }
+
+        .btn:active {
+            transform: translate(0, 0);
+            box-shadow: 2px 2px 0 var(--dark);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+        }
+
+        /* FORMS */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            color: var(--secondary);
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--dark);
+            background: white;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 4px 4px 0 rgba(255, 107, 53, 0.2);
+        }
+
+        /* MODAL */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border: 4px solid var(--dark);
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 12px 12px 0 var(--dark);
+            animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            border-bottom: 3px solid var(--dark);
+            padding-bottom: 1rem;
+        }
+
+        .modal-title {
+            font-family: var(--font-display);
+            font-size: 2rem;
+            color: var(--secondary);
+            text-transform: uppercase;
+        }
+
+        .modal-close {
+            background: var(--danger);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            transform: rotate(90deg);
+        }
+
+        /* CHARTS */
+        .chart-container {
+            background: white;
+            padding: 2rem;
+            border: 3px solid var(--dark);
+            margin-bottom: 2rem;
+            box-shadow: 8px 8px 0 var(--dark);
+        }
+
+        .chart-title {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            color: var(--secondary);
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+            letter-spacing: 1px;
+        }
+
+        /* ATTENDANCE CALENDAR */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .calendar-day {
+            background: white;
+            border: 2px solid var(--dark);
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .calendar-day:hover {
+            transform: translateY(-2px);
+            box-shadow: 4px 4px 0 var(--dark);
+        }
+
+        .calendar-day-header {
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            color: var(--secondary);
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+
+        .calendar-courses {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .calendar-course {
+            background: var(--light);
+            padding: 0.5rem;
+            font-size: 0.7rem;
+            border-left: 3px solid var(--primary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .calendar-course:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .calendar-course.present {
+            background: var(--success);
+            color: white;
+            border-left-color: var(--dark);
+        }
+
+        .calendar-course.absent {
+            background: var(--danger);
+            color: white;
+            border-left-color: var(--dark);
+        }
+
+        /* MATIERE CARDS */
+        .matieres-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .matiere-card {
+            background: white;
+            border: 3px solid var(--dark);
+            padding: 1.5rem;
+            box-shadow: 6px 6px 0 var(--dark);
+            position: relative;
+        }
+
+        .matiere-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 6px;
+            height: 100%;
+        }
+
+        .matiere-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+
+        .matiere-name {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            color: var(--secondary);
+            text-transform: uppercase;
+        }
+
+        .matiere-percentage {
+            font-family: var(--font-display);
+            font-size: 2rem;
+            color: var(--primary);
+        }
+
+        .matiere-stats {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 2px solid var(--grid);
+        }
+
+        .matiere-stat {
+            flex: 1;
+            text-align: center;
+        }
+
+        .matiere-stat-value {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--secondary);
+        }
+
+        .matiere-stat-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: #999;
+            margin-top: 0.25rem;
+        }
+
+        .alert-low {
+            background: var(--danger);
+            color: white;
+            padding: 0.5rem;
+            text-align: center;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            margin-top: 1rem;
+            letter-spacing: 1px;
+        }
+
+        /* COLOR PICKER */
+        .color-options {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 0.5rem;
+        }
+
+        .color-option {
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--dark);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .color-option:hover,
+        .color-option.selected {
+            transform: scale(1.2);
+            box-shadow: 0 0 0 3px var(--accent);
+        }
+
+        /* ACTIONS BAR */
+        .actions-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 1024px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: relative;
+                height: auto;
+            }
+
+            .schedule-grid {
+                grid-template-columns: 60px repeat(5, 1fr);
+                font-size: 0.8rem;
+            }
+
+            .page-title {
+                font-size: 2.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 1rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .schedule-grid {
+                display: block;
+            }
+
+            .matieres-grid {
+                grid-template-columns: 1fr;
+            }
+
+            #revision-timer-display {
+                font-size: 3rem !important;
+            }
+        }
+
+        /* LOADING ANIMATION */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--light);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* EMPTY STATE */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border: 3px dashed var(--grid);
+            margin: 2rem 0;
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        .empty-state-title {
+            font-family: var(--font-display);
+            font-size: 2rem;
+            color: var(--secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state-text {
+            color: #999;
+            margin-bottom: 2rem;
+        }
+
+        /* REVISION SESSION CARD */
+        .revision-session {
+            background: white;
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .revision-session:hover {
+            box-shadow: 4px 4px 0 var(--dark);
+            transform: translateX(-2px);
+        }
+
+        .revision-session-info {
+            flex: 1;
+        }
+
+        .revision-session-matiere {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .revision-session-time {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .revision-session-duration {
+            font-family: var(--font-display);
+            font-size: 2rem;
+            color: var(--primary);
+            text-align: right;
+        }
+
+        .revision-session-delete {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 0.5rem;
+            cursor: pointer;
+            margin-left: 1rem;
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
+
+        .revision-session-delete:hover {
+            transform: scale(1.1);
+        }
+
+        /* TIMER ANIMATION */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .timer-active {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        /* GROWTH VISUALIZATION */
+        .growth-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            height: 400px;
+            margin: 2rem 0;
+            position: relative;
+            padding: 0 2rem;
+            overflow: hidden;
+            background: linear-gradient(180deg, #87CEEB 0%, #E0F4FF 50%, #D2B48C 100%);
+            border: 4px solid var(--dark);
+        }
+
+        .growth-stage {
+            position: relative;
+            transition: all 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            margin-bottom: 30px;
+        }
+
+        /* Ground base for all stages */
+        .growth-stage::before {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 10px;
+            background: #8B7355;
+            border: 3px solid var(--dark);
+            z-index: -1;
+        }
+
+        /* STAGE 0: Plans sur le bureau */
+        .stage-0 .growth-visual {
+            width: 80px;
+            height: 60px;
+            background: white;
+            border: 4px solid var(--dark);
+            margin-bottom: 15px;
+            position: relative;
+            animation: paperFloat 3s ease-in-out infinite;
+        }
+
+        .stage-0 .growth-visual::before {
+            content: '📐';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+        }
+
+        .stage-0 .growth-visual::after {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            border: 2px solid var(--grid);
+            background: linear-gradient(45deg, var(--grid) 25%, transparent 25%);
+        }
+
+        @keyframes paperFloat {
+            0%, 100% { transform: translateY(0) rotate(-2deg); }
+            50% { transform: translateY(-5px) rotate(2deg); }
+        }
+
+        /* STAGE 1: 5min - Fondations */
+        .stage-1 .growth-visual {
+            width: 120px;
+            height: 40px;
+            background: linear-gradient(180deg, #696969 0%, #4A4A4A 100%);
+            border: 5px solid var(--dark);
+            margin-bottom: 15px;
+            position: relative;
+            animation: foundation 2s ease-in-out infinite;
+            box-shadow: 0 5px 0 var(--dark), inset 0 0 10px rgba(0,0,0,0.3);
+        }
+
+        .stage-1 .growth-visual::before {
+            content: '🏗️';
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2.5rem;
+            animation: crane 3s ease-in-out infinite;
+        }
+
+        .stage-1 .growth-visual::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 10%;
+            right: 10%;
+            height: 3px;
+            background: repeating-linear-gradient(90deg, var(--dark) 0px, var(--dark) 10px, transparent 10px, transparent 20px);
+        }
+
+        @keyframes foundation {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        @keyframes crane {
+            0%, 100% { transform: translateX(-50%) rotate(-5deg); }
+            50% { transform: translateX(-50%) rotate(5deg); }
+        }
+
+        /* STAGE 2: 15min - Rez-de-chaussée */
+        .stage-2 .growth-visual {
+            width: 120px;
+            height: 80px;
+            background: linear-gradient(180deg, var(--primary) 0%, #CC5A2E 100%);
+            border: 5px solid var(--dark);
+            margin-bottom: 15px;
+            position: relative;
+            animation: building2 2s ease-in-out infinite;
+            box-shadow: 0 8px 0 var(--dark), 0 0 20px rgba(255, 107, 53, 0.3);
+        }
+
+        /* Windows */
+        .stage-2 .growth-visual::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 25px;
+            height: 30px;
+            background: #87CEEB;
+            border: 3px solid var(--dark);
+            box-shadow: 45px 0 0 0 #87CEEB, 45px 0 0 3px var(--dark);
+        }
+
+        .stage-2 .growth-visual::after {
+            content: '⚒️';
+            position: absolute;
+            top: -45px;
+            right: 10px;
+            font-size: 2rem;
+            animation: hammer 1s ease-in-out infinite;
+        }
+
+        @keyframes building2 {
+            0%, 100% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.03); filter: brightness(1.1); }
+        }
+
+        @keyframes hammer {
+            0%, 100% { transform: rotate(-20deg); }
+            50% { transform: rotate(20deg); }
+        }
+
+        /* STAGE 3: 30min - 2 étages */
+        .stage-3 .growth-visual {
+            width: 130px;
+            height: 130px;
+            background: linear-gradient(180deg, var(--accent) 0%, var(--primary) 50%, #CC5A2E 100%);
+            border: 5px solid var(--dark);
+            margin-bottom: 15px;
+            position: relative;
+            animation: building3 2s ease-in-out infinite;
+            box-shadow: 
+                0 10px 0 var(--dark),
+                0 0 30px rgba(247, 184, 1, 0.4);
+        }
+
+        /* Multiple windows */
+        .stage-3 .growth-visual::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 15px;
+            width: 20px;
+            height: 25px;
+            background: #87CEEB;
+            border: 3px solid var(--dark);
+            box-shadow: 
+                35px 0 0 0 #87CEEB, 35px 0 0 3px var(--dark),
+                70px 0 0 0 #87CEEB, 70px 0 0 3px var(--dark),
+                0 45px 0 0 #87CEEB, 0 45px 0 3px var(--dark),
+                35px 45px 0 0 #87CEEB, 35px 45px 0 3px var(--dark),
+                70px 45px 0 0 #87CEEB, 70px 45px 0 3px var(--dark);
+        }
+
+        .stage-3 .growth-visual::after {
+            content: '🏗️';
+            position: absolute;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 3rem;
+            animation: craneSwing 3s ease-in-out infinite;
+        }
+
+        @keyframes building3 {
+            0%, 100% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.04); filter: brightness(1.15); }
+        }
+
+        @keyframes craneSwing {
+            0%, 100% { transform: translateX(-50%) rotate(-10deg); }
+            50% { transform: translateX(-50%) rotate(10deg); }
+        }
+
+        /* STAGE 4: 1h - Immeuble 4 étages */
+        .stage-4 .growth-visual {
+            width: 140px;
+            height: 180px;
+            background: linear-gradient(180deg, 
+                var(--success) 0%, 
+                var(--accent) 33%, 
+                var(--primary) 66%, 
+                #CC5A2E 100%
+            );
+            border: 6px solid var(--dark);
+            margin-bottom: 15px;
+            position: relative;
+            animation: building4 2.5s ease-in-out infinite;
+            box-shadow: 
+                0 12px 0 var(--dark),
+                0 0 40px rgba(247, 184, 1, 0.5),
+                0 0 60px rgba(6, 214, 160, 0.3);
+        }
+
+        /* Grid of windows */
+        .stage-4 .growth-visual::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            width: 20px;
+            height: 22px;
+            background: #FFD700;
+            border: 3px solid var(--dark);
+            box-shadow: 
+                35px 0 0 0 #FFD700, 35px 0 0 3px var(--dark),
+                70px 0 0 0 #FFD700, 70px 0 0 3px var(--dark),
+                0 35px 0 0 #87CEEB, 0 35px 0 3px var(--dark),
+                35px 35px 0 0 #FFD700, 35px 35px 0 3px var(--dark),
+                70px 35px 0 0 #87CEEB, 70px 35px 0 3px var(--dark),
+                0 70px 0 0 #FFD700, 0 70px 0 3px var(--dark),
+                35px 70px 0 0 #87CEEB, 35px 70px 0 3px var(--dark),
+                70px 70px 0 0 #FFD700, 70px 70px 0 3px var(--dark),
+                0 105px 0 0 #87CEEB, 0 105px 0 3px var(--dark),
+                35px 105px 0 0 #FFD700, 35px 105px 0 3px var(--dark),
+                70px 105px 0 0 #87CEEB, 70px 105px 0 3px var(--dark);
+            animation: lightsFlicker 2s ease-in-out infinite;
+        }
+
+        .stage-4 .growth-visual::after {
+            content: '🏆';
+            position: absolute;
+            top: -70px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 4.5rem;
+            animation: trophyFloat 2s ease-in-out infinite;
+            filter: drop-shadow(0 0 30px rgba(247, 184, 1, 1));
+        }
+
+        @keyframes building4 {
+            0%, 100% { 
+                transform: scale(1); 
+                filter: brightness(1);
+            }
+            50% { 
+                transform: scale(1.05); 
+                filter: brightness(1.2) saturate(1.2);
+            }
+        }
+
+        @keyframes lightsFlicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        @keyframes trophyFloat {
+            0%, 100% { 
+                transform: translateX(-50%) translateY(0) rotate(-10deg);
+            }
+            50% { 
+                transform: translateX(-50%) translateY(-15px) rotate(10deg) scale(1.15);
+            }
+        }
+
+        /* STAGE 5: 2h - Gratte-ciel moderne */
+        .stage-5 .growth-visual {
+            width: 150px;
+            height: 220px;
+            background: linear-gradient(180deg, 
+                var(--success) 0%, 
+                var(--accent) 25%, 
+                var(--primary) 50%, 
+                var(--secondary) 75%,
+                #4A4A4A 100%
+            );
+            border: 6px solid var(--dark);
+            margin-bottom: 15px;
+            position: relative;
+            animation: building5 2s ease-in-out infinite;
+            box-shadow: 
+                0 15px 0 var(--dark),
+                0 0 50px rgba(247, 184, 1, 0.6),
+                0 0 80px rgba(6, 214, 160, 0.4),
+                inset 0 0 30px rgba(255, 255, 255, 0.2);
+        }
+
+        .stage-5 .growth-visual::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 12px;
+            width: 18px;
+            height: 20px;
+            background: #FFD700;
+            border: 2px solid var(--dark);
+            box-shadow: 
+                30px 0 0 0 #FFD700, 30px 0 0 2px var(--dark),
+                60px 0 0 0 #FFD700, 60px 0 0 2px var(--dark),
+                90px 0 0 0 #FFD700, 90px 0 0 2px var(--dark),
+                0 30px 0 0 #87CEEB, 0 30px 0 2px var(--dark),
+                30px 30px 0 0 #FFD700, 30px 30px 0 2px var(--dark),
+                60px 30px 0 0 #87CEEB, 60px 30px 0 2px var(--dark),
+                90px 30px 0 0 #FFD700, 90px 30px 0 2px var(--dark),
+                0 60px 0 0 #FFD700, 0 60px 0 2px var(--dark),
+                30px 60px 0 0 #87CEEB, 30px 60px 0 2px var(--dark),
+                60px 60px 0 0 #FFD700, 60px 60px 0 2px var(--dark),
+                90px 60px 0 0 #87CEEB, 90px 60px 0 2px var(--dark),
+                0 90px 0 0 #87CEEB, 0 90px 0 2px var(--dark),
+                30px 90px 0 0 #FFD700, 30px 90px 0 2px var(--dark),
+                60px 90px 0 0 #87CEEB, 60px 90px 0 2px var(--dark),
+                90px 90px 0 0 #FFD700, 90px 90px 0 2px var(--dark),
+                0 120px 0 0 #FFD700, 0 120px 0 2px var(--dark),
+                30px 120px 0 0 #87CEEB, 30px 120px 0 2px var(--dark),
+                60px 120px 0 0 #FFD700, 60px 120px 0 2px var(--dark),
+                90px 120px 0 0 #87CEEB, 90px 120px 0 2px var(--dark);
+            animation: cityLights 3s ease-in-out infinite;
+        }
+
+        .stage-5 .growth-visual::after {
+            content: '⭐';
+            position: absolute;
+            top: -80px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 5.5rem;
+            animation: starRotate 3s linear infinite;
+            filter: drop-shadow(0 0 40px rgba(247, 184, 1, 1));
+        }
+
+        @keyframes building5 {
+            0%, 100% { 
+                transform: scale(1); 
+                filter: brightness(1);
+            }
+            50% { 
+                transform: scale(1.06); 
+                filter: brightness(1.25) saturate(1.4);
+            }
+        }
+
+        @keyframes cityLights {
+            0%, 100% { opacity: 1; filter: brightness(1); }
+            50% { opacity: 0.8; filter: brightness(1.3); }
+        }
+
+        @keyframes starRotate {
+            0% { 
+                transform: translateX(-50%) rotate(0deg) scale(1);
+            }
+            50% { 
+                transform: translateX(-50%) rotate(180deg) scale(1.2);
+            }
+            100% { 
+                transform: translateX(-50%) rotate(360deg) scale(1);
+            }
+        }
+
+        /* STAGE 6: 3h - Tour de bureaux épique */
+        .stage-6 .growth-visual {
+            width: 160px;
+            height: 260px;
+            background: linear-gradient(135deg, 
+                var(--success) 0%, 
+                var(--accent) 20%, 
+                var(--primary) 40%,
+                var(--secondary) 60%,
+                var(--accent) 80%,
+                var(--success) 100%
+            );
+            background-size: 200% 200%;
+            border: 7px solid var(--dark);
+            margin-bottom: 15px;
+            position: relative;
+            animation: building6 3s ease-in-out infinite;
+            box-shadow: 
+                0 18px 0 var(--dark),
+                0 0 60px rgba(255, 107, 53, 0.7),
+                0 0 100px rgba(247, 184, 1, 0.5),
+                inset 0 0 40px rgba(255, 255, 255, 0.3);
+        }
+
+        /* Antenne sur le toit */
+        .stage-6 .growth-visual::before {
+            content: '';
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 40px;
+            background: var(--dark);
+            box-shadow: 
+                0 -10px 0 0 red,
+                0 -10px 0 3px var(--dark);
+            animation: antennaFlash 1.5s ease-in-out infinite;
+        }
+
+        .stage-6 .growth-visual::after {
+            content: '🔥';
+            position: absolute;
+            top: -90px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 6.5rem;
+            animation: epicFire 1.5s ease-in-out infinite;
+            filter: drop-shadow(0 0 50px rgba(255, 107, 53, 1));
+        }
+
+        @keyframes building6 {
+            0%, 100% { 
+                transform: scale(1); 
+                background-position: 0% 50%;
+                filter: brightness(1);
+            }
+            50% { 
+                transform: scale(1.08); 
+                background-position: 100% 50%;
+                filter: brightness(1.3) saturate(1.6);
+            }
+        }
+
+        @keyframes antennaFlash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        @keyframes epicFire {
+            0%, 100% { 
+                transform: translateX(-50%) scale(1);
+                filter: drop-shadow(0 0 50px rgba(255, 107, 53, 1));
+            }
+            25% { 
+                transform: translateX(-50%) translateY(-10px) scale(1.2);
+                filter: drop-shadow(0 0 70px rgba(255, 107, 53, 1));
+            }
+            75% { 
+                transform: translateX(-50%) translateY(-5px) scale(1.1);
+                filter: drop-shadow(0 0 60px rgba(247, 184, 1, 1));
+            }
+        }
+
+        /* STAGE 7: 4h+ - BURJ KHALIFA LÉGENDAIRE */
+        .stage-7 .growth-visual {
+            width: 170px;
+            height: 300px;
+            background: 
+                linear-gradient(45deg, 
+                    var(--primary) 0%, 
+                    var(--accent) 12.5%, 
+                    var(--success) 25%, 
+                    var(--secondary) 37.5%,
+                    var(--primary) 50%,
+                    var(--accent) 62.5%,
+                    var(--success) 75%,
+                    var(--secondary) 87.5%,
+                    var(--primary) 100%
+                );
+            background-size: 400% 400%;
+            border: 8px solid var(--dark);
+            margin-bottom: 15px;
+            position: relative;
+            animation: building7 4s ease-in-out infinite;
+            box-shadow: 
+                0 25px 0 var(--dark),
+                0 0 80px rgba(255, 107, 53, 0.9),
+                0 0 120px rgba(247, 184, 1, 0.7),
+                0 0 160px rgba(6, 214, 160, 0.5),
+                inset 0 0 60px rgba(255, 255, 255, 0.4);
+        }
+
+        /* Flèche au sommet */
+        .stage-7 .growth-visual::before {
+            content: '';
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 30px solid transparent;
+            border-right: 30px solid transparent;
+            border-bottom: 60px solid var(--accent);
+            filter: drop-shadow(0 0 20px rgba(247, 184, 1, 0.8));
+            animation: spireGlow 2s ease-in-out infinite;
+        }
+
+        .stage-7 .growth-visual::after {
+            content: '👑';
+            position: absolute;
+            top: -120px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 8rem;
+            animation: legendCrown 3s ease-in-out infinite;
+            filter: 
+                drop-shadow(0 0 60px rgba(247, 184, 1, 1)) 
+                drop-shadow(0 0 100px rgba(255, 107, 53, 1));
+        }
+
+        /* Particules de gloire */
+        .stage-7::after {
+            content: '✨';
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 15rem;
+            opacity: 0.3;
+            animation: sparkleExplosion 3s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes building7 {
+            0%, 100% { 
+                transform: scale(1); 
+                background-position: 0% 50%;
+                filter: brightness(1) saturate(1);
+            }
+            33% { 
+                transform: scale(1.1); 
+                background-position: 50% 100%;
+                filter: brightness(1.5) saturate(2);
+            }
+            66% { 
+                transform: scale(1.06); 
+                background-position: 100% 50%;
+                filter: brightness(1.4) saturate(1.8);
+            }
+        }
+
+        @keyframes spireGlow {
+            0%, 100% { 
+                filter: drop-shadow(0 0 20px rgba(247, 184, 1, 0.8));
+            }
+            50% { 
+                filter: drop-shadow(0 0 40px rgba(247, 184, 1, 1)) drop-shadow(0 0 60px rgba(255, 107, 53, 0.8));
+            }
+        }
+
+        @keyframes legendCrown {
+            0%, 100% { 
+                transform: translateX(-50%) translateY(0) rotate(-10deg) scale(1);
+            }
+            50% { 
+                transform: translateX(-50%) translateY(-25px) rotate(10deg) scale(1.3);
+            }
+        }
+
+        @keyframes sparkleExplosion {
+            0%, 100% { 
+                opacity: 0.2;
+                transform: translate(-50%, -50%) rotate(0deg) scale(1);
+            }
+            50% { 
+                opacity: 0.5;
+                transform: translate(-50%, -50%) rotate(180deg) scale(1.4);
+            }
+        }
+
+        .growth-label {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-family: var(--font-display);
+            font-size: 2rem;
+            color: var(--secondary);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 2px 2px 0 var(--dark);
+            animation: labelPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes labelPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .growth-message {
+            text-align: center;
+            margin-top: 0.5rem;
+            font-size: 1rem;
+            color: var(--primary);
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        /* MATIERE SELECTOR */
+        .matiere-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .matiere-selector-item {
+            background: white;
+            border: 3px solid var(--dark);
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .matiere-selector-item:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-4px);
+            box-shadow: 6px 6px 0 var(--dark);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="logo">TrackU</div>
+            <div class="logo-subtitle">Suivi d'assiduité</div>
+            <ul class="nav-menu">
+                <li class="nav-item active" data-section="dashboard">📊 Tableau de bord</li>
+                <li class="nav-item" data-section="emploi">📅 Emploi du temps</li>
+                <li class="nav-item" data-section="historique">✓ Historique</li>
+                <li class="nav-item" data-section="revisions">📚 Révisions</li>
+                <li class="nav-item" data-section="statistiques">📈 Statistiques</li>
+                <li class="nav-item" data-section="parametres">⚙️ Paramètres</li>
+            </ul>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <!-- DASHBOARD SECTION -->
+            <section id="dashboard" class="section active">
+                <div class="page-header">
+                    <h1 class="page-title">Tableau de bord</h1>
+                    <p class="page-subtitle">Vue d'ensemble de votre assiduité</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Taux global</div>
+                        <div class="stat-value" id="global-rate">--</div>
+                        <div class="stat-detail" id="global-detail">Calcul en cours...</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Présences</div>
+                        <div class="stat-value" id="total-present">0</div>
+                        <div class="stat-detail">cours suivis</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Absences</div>
+                        <div class="stat-value" id="total-absent">0</div>
+                        <div class="stat-detail">cours manqués</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Cette semaine</div>
+                        <div class="stat-value" id="week-rate">--</div>
+                        <div class="stat-detail" id="week-detail">--</div>
+                    </div>
+                </div>
+
+                <div class="schedule-container">
+                    <h2 class="chart-title">Emploi du temps de la semaine</h2>
+                    <div id="dashboard-schedule"></div>
+                </div>
+
+                <div class="matieres-grid" id="dashboard-matieres"></div>
+            </section>
+
+            <!-- EMPLOI DU TEMPS SECTION -->
+            <section id="emploi" class="section">
+                <div class="page-header">
+                    <h1 class="page-title">Emploi du temps</h1>
+                    <p class="page-subtitle">Gérez vos créneaux de cours</p>
+                </div>
+
+                <div class="actions-bar">
+                    <button class="btn" onclick="app.openAddCourseModal()">+ Ajouter un cours</button>
+                    <button class="btn btn-secondary" onclick="app.exportData()">⬇ Exporter</button>
+                    <button class="btn btn-secondary" onclick="app.importData()">⬆ Importer</button>
+                </div>
+
+                <div class="schedule-container">
+                    <div id="schedule-grid" class="schedule-grid"></div>
+                </div>
+            </section>
+
+            <!-- HISTORIQUE SECTION -->
+            <section id="historique" class="section">
+                <div class="page-header">
+                    <h1 class="page-title">Historique</h1>
+                    <p class="page-subtitle">Suivez votre présence quotidienne</p>
+                </div>
+
+                <div class="actions-bar">
+                    <button class="btn btn-small" onclick="app.changeWeek(-1)">← Semaine précédente</button>
+                    <button class="btn btn-small btn-success" onclick="app.changeWeek(0)">Aujourd'hui</button>
+                    <button class="btn btn-small" onclick="app.changeWeek(1)">Semaine suivante →</button>
+                </div>
+
+                <div id="calendar-container"></div>
+            </section>
+
+            <!-- REVISIONS SECTION -->
+            <section id="revisions" class="section">
+                <div class="page-header">
+                    <h1 class="page-title">Révisions</h1>
+                    <p class="page-subtitle">Trackez votre temps de travail</p>
+                </div>
+
+                <!-- CHRONOMETRE -->
+                <div class="schedule-container" style="text-align: center; padding: 3rem 2rem;">
+                    <!-- GROWTH VISUALIZATION -->
+                    <div class="growth-container" id="growth-container">
+                        <div class="growth-stage stage-0" id="growth-stage">
+                            <div class="growth-visual"></div>
+                        </div>
+                    </div>
+                    <div class="growth-label" id="growth-label">Prêt à commencer</div>
+                    <div class="growth-message" id="growth-message">Lance une révision pour voir la magie opérer ! 🚀</div>
+
+                    <div id="revision-timer-display" style="font-family: var(--font-display); font-size: 4rem; color: var(--secondary); margin: 2rem 0 1rem 0;">
+                        00:00:00
+                    </div>
+                    
+                    <div id="revision-matiere-display" style="font-size: 1.5rem; color: var(--primary); margin-bottom: 2rem; min-height: 2rem;">
+                        --
+                    </div>
+
+                    <div class="actions-bar" style="justify-content: center;">
+                        <button id="btn-start-revision" class="btn btn-success" style="font-size: 1.2rem; padding: 1.5rem 3rem;" onclick="app.startRevision()">
+                            ▶ Commencer une révision
+                        </button>
+                        <button id="btn-stop-revision" class="btn" style="font-size: 1.2rem; padding: 1.5rem 3rem; background: var(--danger); display: none;" onclick="app.stopRevision()">
+                            ⬛ Terminer
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STATS REVISIONS -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Aujourd'hui</div>
+                        <div class="stat-value" id="revision-today">0h00</div>
+                        <div class="stat-detail">temps de révision</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Cette semaine</div>
+                        <div class="stat-value" id="revision-week">0h00</div>
+                        <div class="stat-detail">cumulé</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Ce mois</div>
+                        <div class="stat-value" id="revision-month">0h00</div>
+                        <div class="stat-detail">cumulé</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total</div>
+                        <div class="stat-value" id="revision-total">0h00</div>
+                        <div class="stat-detail">toutes révisions</div>
+                    </div>
+                </div>
+
+                <!-- HISTORIQUE DES SESSIONS -->
+                <div class="schedule-container">
+                    <h2 class="chart-title">Historique des sessions</h2>
+                    <div id="revision-history"></div>
+                </div>
+
+                <!-- GRAPHIQUES -->
+                <div class="chart-container">
+                    <h2 class="chart-title">Révisions par matière (cette semaine)</h2>
+                    <canvas id="chart-revision-matiere"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <h2 class="chart-title">Évolution quotidienne (7 derniers jours)</h2>
+                    <canvas id="chart-revision-daily"></canvas>
+                </div>
+            </section>
+
+            <!-- STATISTIQUES SECTION -->
+            <section id="statistiques" class="section">
+                <div class="page-header">
+                    <h1 class="page-title">Statistiques</h1>
+                    <p class="page-subtitle">Analyses détaillées de votre assiduité</p>
+                </div>
+
+                <div class="chart-container">
+                    <h2 class="chart-title">Taux de présence par matière</h2>
+                    <canvas id="chart-by-matiere"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <h2 class="chart-title">Évolution dans le temps</h2>
+                    <canvas id="chart-evolution"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <h2 class="chart-title">Répartition présences/absences</h2>
+                    <canvas id="chart-repartition"></canvas>
+                </div>
+            </section>
+
+            <!-- PARAMETRES SECTION -->
+            <section id="parametres" class="section">
+                <div class="page-header">
+                    <h1 class="page-title">Paramètres</h1>
+                    <p class="page-subtitle">Configuration de l'application</p>
+                </div>
+
+                <!-- SYNC CLOUD -->
+                <div class="schedule-container">
+                    <h2 class="chart-title">☁️ Synchronisation Cloud</h2>
+                    <p style="margin-bottom: 1.5rem; color: #666;">
+                        Synchronisez vos données entre tous vos appareils (ordinateur, téléphone, tablette)
+                    </p>
+                    
+                    <div id="sync-status" style="background: #f5f5f5; padding: 1.5rem; border: 3px solid var(--dark); margin-bottom: 1.5rem;">
+                        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                            <div id="sync-indicator" style="width: 20px; height: 20px; border-radius: 50%; background: var(--danger); border: 3px solid var(--dark);"></div>
+                            <div>
+                                <strong id="sync-status-text">Non connecté</strong><br>
+                                <span id="sync-user-email" style="font-size: 0.85rem; color: #999;"></span>
+                            </div>
+                        </div>
+                        <div id="sync-info" style="font-size: 0.85rem; color: #666;"></div>
+                    </div>
+
+                    <div class="actions-bar" id="sync-actions-logged-out">
+                        <button class="btn btn-success" onclick="app.showLoginModal()">🔐 Se connecter</button>
+                        <button class="btn" onclick="app.showRegisterModal()">📝 Créer un compte</button>
+                    </div>
+
+                    <div class="actions-bar" id="sync-actions-logged-in" style="display: none;">
+                        <button class="btn btn-success" onclick="app.syncNow()">🔄 Synchroniser maintenant</button>
+                        <button class="btn" style="background: var(--danger);" onclick="app.logout()">🚪 Se déconnecter</button>
+                    </div>
+                </div>
+
+                <div class="schedule-container">
+                    <h2 class="chart-title">Gestion des données</h2>
+                    <div class="actions-bar">
+                        <button class="btn" onclick="app.exportData()">Exporter toutes les données</button>
+                        <button class="btn btn-secondary" onclick="app.importData()">Importer des données</button>
+                        <button class="btn" style="background: var(--danger);" onclick="app.resetData()">Réinitialiser</button>
+                    </div>
+                </div>
+
+                <div class="schedule-container" style="margin-top: 2rem;">
+                    <h2 class="chart-title">À propos</h2>
+                    <p style="margin-bottom: 1rem;">TrackU - Application de suivi d'assiduité universitaire</p>
+                    <p style="font-size: 0.85rem; color: #999;">Version 1.0 - Développé pour les étudiants</p>
+                    <p style="font-size: 0.85rem; color: #999; margin-top: 1rem;">
+                        Les données sont stockées localement et peuvent être synchronisées sur le cloud.
+                    </p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL ADD COURSE -->
+    <div id="modal-course" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-course-title">Ajouter un cours</h2>
+                <button class="modal-close" onclick="app.closeModal('modal-course')">×</button>
+            </div>
+            <form id="form-course" onsubmit="app.saveCourse(event)">
+                <input type="hidden" id="course-id">
+                
+                <div class="form-group">
+                    <label class="form-label">Nom de la matière</label>
+                    <input type="text" id="course-matiere" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Jour</label>
+                    <select id="course-jour" class="form-select" required>
+                        <option value="1">Lundi</option>
+                        <option value="2">Mardi</option>
+                        <option value="3">Mercredi</option>
+                        <option value="4">Jeudi</option>
+                        <option value="5">Vendredi</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Heure de début</label>
+                    <select id="course-debut" class="form-select" required onchange="app.updateEndTime()">
+                        <option value="08:00">08:00 - 09:20</option>
+                        <option value="09:30">09:30 - 10:50</option>
+                        <option value="11:00">11:00 - 12:20</option>
+                        <option value="14:00">14:00 - 15:20</option>
+                        <option value="15:30">15:30 - 16:50</option>
+                        <option value="17:00">17:00 - 18:20</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Heure de fin</label>
+                    <input type="time" id="course-fin" class="form-input" required readonly style="background: #f5f5f5;">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Salle</label>
+                    <input type="text" id="course-salle" class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Type</label>
+                    <select id="course-type" class="form-select" required>
+                        <option value="CM">CM (Cours Magistral)</option>
+                        <option value="TD">TD (Travaux Dirigés)</option>
+                        <option value="TP">TP (Travaux Pratiques)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Couleur</label>
+                    <div class="color-options" id="color-picker"></div>
+                </div>
+
+                <div class="actions-bar">
+                    <button type="submit" class="btn btn-success">Enregistrer</button>
+                    <button type="button" class="btn btn-secondary" onclick="app.closeModal('modal-course')">Annuler</button>
+                    <button type="button" class="btn" style="background: var(--danger); margin-left: auto;" onclick="app.deleteCourse()" id="btn-delete-course">Supprimer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL ATTENDANCE -->
+    <div id="modal-attendance" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-attendance-title">Marquer la présence</h2>
+                <button class="modal-close" onclick="app.closeModal('modal-attendance')">×</button>
+            </div>
+            <div id="attendance-form">
+                <p style="margin-bottom: 2rem;">Étiez-vous présent à ce cours ?</p>
+                <div class="actions-bar">
+                    <button class="btn btn-success" onclick="app.markAttendance('present')">✓ Présent</button>
+                    <button class="btn" style="background: var(--danger);" onclick="app.markAttendance('absent')">✗ Absent</button>
+                    <button class="btn btn-secondary" onclick="app.closeModal('modal-attendance')">Annuler</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL REVISION MATIERE -->
+    <div id="modal-revision" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Quelle matière révises-tu ?</h2>
+                <button class="modal-close" onclick="app.closeModal('modal-revision')">×</button>
+            </div>
+            <div id="revision-matiere-list"></div>
+        </div>
+    </div>
+
+    <!-- MODAL LOGIN -->
+    <div id="modal-login" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Connexion</h2>
+                <button class="modal-close" onclick="app.closeModal('modal-login')">×</button>
+            </div>
+            <form id="form-login" onsubmit="app.login(event)">
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="login-email" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mot de passe</label>
+                    <input type="password" id="login-password" class="form-input" required>
+                </div>
+                <div class="actions-bar">
+                    <button type="submit" class="btn btn-success">Se connecter</button>
+                    <button type="button" class="btn btn-secondary" onclick="app.closeModal('modal-login')">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL REGISTER -->
+    <div id="modal-register" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Créer un compte</h2>
+                <button class="modal-close" onclick="app.closeModal('modal-register')">×</button>
+            </div>
+            <form id="form-register" onsubmit="app.register(event)">
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="register-email" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mot de passe</label>
+                    <input type="password" id="register-password" class="form-input" required minlength="6">
+                    <small style="color: #666;">Au moins 6 caractères</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Confirmer le mot de passe</label>
+                    <input type="password" id="register-password-confirm" class="form-input" required>
+                </div>
+                <div class="actions-bar">
+                    <button type="submit" class="btn btn-success">Créer le compte</button>
+                    <button type="button" class="btn btn-secondary" onclick="app.closeModal('modal-register')">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const app = {
+            data: {
+                courses: [],
+                attendances: [],
+                revisions: [],
+                currentRevision: null,
+                revisionTimer: null,
+                revisionStartTime: null,
+                selectedCourse: null,
+                selectedDate: null,
+                currentWeekOffset: 0,
+                selectedColor: '#FF6B35'
+            },
+
+            firebase: null,
+            database: null,
+            auth: null,
+            currentUser: null,
+            syncEnabled: false,
+
+            colors: [
+                '#FF6B35', '#004E89', '#F7B801', '#06D6A0', '#EF476F',
+                '#8338EC', '#FB5607', '#3A86FF', '#06FFA5', '#FFB703'
+            ],
+
+            init() {
+                this.initFirebase();
+                this.loadData();
+                this.setupNavigation();
+                this.renderColorPicker();
+                this.render();
+                this.setupAutoSave();
+                this.checkAuthState();
+            },
+
+            initFirebase() {
+                // Configuration Firebase de Vassili
+                const firebaseConfig = {
+                    apiKey: "AIzaSyBc8Ft7c7Uk1ek3L8dmZUFaGNUS3VJqHbs",
+                    authDomain: "tracku-63e13.firebaseapp.com",
+                    databaseURL: "https://tracku-63e13-default-rtdb.europe-west1.firebasedatabase.app",
+                    projectId: "tracku-63e13",
+                    storageBucket: "tracku-63e13.firebasestorage.app",
+                    messagingSenderId: "145082385273",
+                    appId: "1:145082385273:web:2cd8d090e883bca2bb828",
+                    measurementId: "G-JG6EFKG4EZ"
+                };
+
+                try {
+                    // Vérifier si Firebase est chargé
+                    if (typeof firebase === 'undefined') {
+                        throw new Error('Firebase SDK non chargé');
+                    }
+
+                    this.firebase = firebase.initializeApp(firebaseConfig);
+                    this.database = firebase.database();
+                    this.auth = firebase.auth();
+                    console.log('✓ Firebase initialisé avec succès');
+                } catch (error) {
+                    console.warn('⚠ Firebase non disponible:', error.message);
+                    this.updateSyncStatus(false, 'Mode local uniquement', '');
+                    
+                    // Afficher un message dans l'UI
+                    setTimeout(() => {
+                        const syncInfo = document.getElementById('sync-info');
+                        if (syncInfo) {
+                            syncInfo.innerHTML = `
+                                <strong>⚠️ Erreur Firebase</strong><br>
+                                ${error.message}
+                            `;
+                        }
+                    }, 1000);
+                }
+            },
+
+            checkAuthState() {
+                if (!this.auth) return;
+
+                this.auth.onAuthStateChanged((user) => {
+                    if (user) {
+                        this.currentUser = user;
+                        this.syncEnabled = true;
+                        this.updateSyncStatus(true, 'Connecté', user.email);
+                        this.loadFromCloud();
+                    } else {
+                        this.currentUser = null;
+                        this.syncEnabled = false;
+                        this.updateSyncStatus(false, 'Non connecté');
+                    }
+                });
+            },
+
+            updateSyncStatus(connected, statusText, email = '') {
+                const indicator = document.getElementById('sync-indicator');
+                const statusTextEl = document.getElementById('sync-status-text');
+                const emailEl = document.getElementById('sync-user-email');
+                const loggedOutActions = document.getElementById('sync-actions-logged-out');
+                const loggedInActions = document.getElementById('sync-actions-logged-in');
+
+                if (connected) {
+                    indicator.style.background = 'var(--success)';
+                    loggedOutActions.style.display = 'none';
+                    loggedInActions.style.display = 'flex';
+                } else {
+                    indicator.style.background = 'var(--danger)';
+                    loggedOutActions.style.display = 'flex';
+                    loggedInActions.style.display = 'none';
+                }
+
+                statusTextEl.textContent = statusText;
+                emailEl.textContent = email;
+            },
+
+            showLoginModal() {
+                document.getElementById('modal-login').classList.add('active');
+            },
+
+            showRegisterModal() {
+                document.getElementById('modal-register').classList.add('active');
+            },
+
+            async login(event) {
+                event.preventDefault();
+                
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+
+                try {
+                    await this.auth.signInWithEmailAndPassword(email, password);
+                    this.closeModal('modal-login');
+                    alert('✓ Connecté avec succès !');
+                } catch (error) {
+                    alert('❌ Erreur de connexion : ' + error.message);
+                }
+            },
+
+            async register(event) {
+                event.preventDefault();
+                
+                const email = document.getElementById('register-email').value;
+                const password = document.getElementById('register-password').value;
+                const confirmPassword = document.getElementById('register-password-confirm').value;
+
+                if (password !== confirmPassword) {
+                    alert('❌ Les mots de passe ne correspondent pas');
+                    return;
+                }
+
+                try {
+                    await this.auth.createUserWithEmailAndPassword(email, password);
+                    this.closeModal('modal-register');
+                    alert('✓ Compte créé avec succès ! Synchronisation activée.');
+                } catch (error) {
+                    alert('❌ Erreur de création : ' + error.message);
+                }
+            },
+
+            async logout() {
+                if (confirm('Se déconnecter ? Les données locales seront conservées.')) {
+                    try {
+                        await this.auth.signOut();
+                        alert('✓ Déconnecté');
+                    } catch (error) {
+                        alert('❌ Erreur : ' + error.message);
+                    }
+                }
+            },
+
+            async syncNow() {
+                if (!this.syncEnabled || !this.currentUser) {
+                    alert('⚠ Vous devez être connecté pour synchroniser');
+                    return;
+                }
+
+                try {
+                    document.getElementById('sync-info').textContent = '⏳ Synchronisation en cours...';
+                    
+                    // Upload to cloud
+                    await this.saveToCloud();
+                    
+                    // Download from cloud (au cas où il y aurait des données plus récentes)
+                    await this.loadFromCloud();
+                    
+                    document.getElementById('sync-info').textContent = '✓ Synchronisé il y a quelques secondes';
+                    setTimeout(() => {
+                        document.getElementById('sync-info').textContent = '';
+                    }, 3000);
+                } catch (error) {
+                    alert('❌ Erreur de synchronisation : ' + error.message);
+                    document.getElementById('sync-info').textContent = '❌ Erreur de synchronisation';
+                }
+            },
+
+            async saveToCloud() {
+                if (!this.syncEnabled || !this.currentUser || !this.database) return;
+
+                const userData = {
+                    courses: this.data.courses,
+                    attendances: this.data.attendances,
+                    revisions: this.data.revisions,
+                    lastSync: Date.now()
+                };
+
+                await this.database.ref('users/' + this.currentUser.uid).set(userData);
+            },
+
+            async loadFromCloud() {
+                if (!this.syncEnabled || !this.currentUser || !this.database) return;
+
+                try {
+                    const snapshot = await this.database.ref('users/' + this.currentUser.uid).once('value');
+                    const cloudData = snapshot.val();
+
+                    if (cloudData) {
+                        // Merge cloud data with local data (cloud has priority)
+                        this.data.courses = cloudData.courses || [];
+                        this.data.attendances = cloudData.attendances || [];
+                        this.data.revisions = cloudData.revisions || [];
+                        
+                        this.saveData(); // Save to localStorage
+                        this.render();
+                        this.renderRevisions();
+                        
+                        const lastSync = cloudData.lastSync ? new Date(cloudData.lastSync).toLocaleString('fr-FR') : 'jamais';
+                        document.getElementById('sync-info').textContent = `Dernière sync: ${lastSync}`;
+                    }
+                } catch (error) {
+                    console.error('Erreur chargement cloud:', error);
+                }
+            },
+
+            setupNavigation() {
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const section = item.dataset.section;
+                        this.navigateTo(section);
+                    });
+                });
+            },
+
+            navigateTo(section) {
+                // Update nav items
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.classList.remove('active');
+                    if (item.dataset.section === section) {
+                        item.classList.add('active');
+                    }
+                });
+
+                // Update sections
+                document.querySelectorAll('.section').forEach(sec => {
+                    sec.classList.remove('active');
+                });
+                document.getElementById(section).classList.add('active');
+
+                // Render specific section
+                if (section === 'dashboard') this.renderDashboard();
+                if (section === 'emploi') this.renderSchedule();
+                if (section === 'historique') this.renderHistorique();
+                if (section === 'revisions') this.renderRevisions();
+                if (section === 'statistiques') this.renderStatistics();
+            },
+
+            loadData() {
+                const saved = localStorage.getItem('tracku-data');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    this.data.courses = parsed.courses || [];
+                    this.data.attendances = parsed.attendances || [];
+                    this.data.revisions = parsed.revisions || [];
+                }
+            },
+
+            saveData() {
+                localStorage.setItem('tracku-data', JSON.stringify({
+                    courses: this.data.courses,
+                    attendances: this.data.attendances,
+                    revisions: this.data.revisions
+                }));
+
+                // Auto-sync to cloud if enabled
+                if (this.syncEnabled && this.currentUser) {
+                    this.saveToCloud().catch(err => console.warn('Auto-sync failed:', err));
+                }
+            },
+
+            setupAutoSave() {
+                setInterval(() => this.saveData(), 30000);
+            },
+
+            render() {
+                this.renderDashboard();
+                this.renderSchedule();
+            },
+
+            // DASHBOARD
+            renderDashboard() {
+                this.updateGlobalStats();
+                this.renderDashboardSchedule();
+                this.renderDashboardMatieres();
+            },
+
+            updateGlobalStats() {
+                const stats = this.calculateGlobalStats();
+                
+                document.getElementById('global-rate').textContent = stats.globalRate + '%';
+                document.getElementById('global-detail').textContent = 
+                    `${stats.totalPresent} présences sur ${stats.totalCourses} cours`;
+                
+                document.getElementById('total-present').textContent = stats.totalPresent;
+                document.getElementById('total-absent').textContent = stats.totalAbsent;
+                
+                document.getElementById('week-rate').textContent = stats.weekRate + '%';
+                document.getElementById('week-detail').textContent = 
+                    `${stats.weekPresent}/${stats.weekTotal} cette semaine`;
+            },
+
+            calculateGlobalStats() {
+                const totalPresent = this.data.attendances.filter(a => a.statut === 'present').length;
+                const totalAbsent = this.data.attendances.filter(a => a.statut === 'absent').length;
+                const totalCourses = totalPresent + totalAbsent;
+                const globalRate = totalCourses > 0 ? Math.round((totalPresent / totalCourses) * 100) : 0;
+
+                // Week stats
+                const weekStart = this.getWeekStart(new Date());
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekEnd.getDate() + 7);
+
+                const weekAttendances = this.data.attendances.filter(a => {
+                    const date = new Date(a.date);
+                    return date >= weekStart && date < weekEnd;
+                });
+
+                const weekPresent = weekAttendances.filter(a => a.statut === 'present').length;
+                const weekTotal = weekAttendances.length;
+                const weekRate = weekTotal > 0 ? Math.round((weekPresent / weekTotal) * 100) : 0;
+
+                return {
+                    totalPresent,
+                    totalAbsent,
+                    totalCourses,
+                    globalRate,
+                    weekPresent,
+                    weekTotal,
+                    weekRate
+                };
+            },
+
+            renderDashboardSchedule() {
+                const container = document.getElementById('dashboard-schedule');
+                const now = new Date();
+                const weekStart = this.getWeekStart(now);
+                const weekDates = this.getWeekDates(weekStart);
+                
+                let html = '<div class="schedule-grid">';
+                
+                // Headers
+                html += '<div class="schedule-header">Heure</div>';
+                ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven'].forEach((day, index) => {
+                    const date = weekDates[index];
+                    html += `<div class="schedule-header">${day}<br><span style="font-size: 0.7rem;">${date.getDate()}/${date.getMonth()+1}</span></div>`;
+                });
+
+                // Time slots (1h20 slots)
+                const timeSlots = [
+                    '08:00',
+                    '09:30',
+                    '11:00',
+                    '12:20', // Pause déjeuner
+                    '14:00',
+                    '15:30',
+                    '17:00'
+                ];
+
+                timeSlots.forEach((timeSlot) => {
+                    const isPause = timeSlot === '12:20';
+                    
+                    if (isPause) {
+                        html += `<div class="time-slot" style="background: #FFE5D9; color: var(--primary);">PAUSE</div>`;
+                        for (let day = 1; day <= 5; day++) {
+                            html += `<div class="schedule-cell" style="background: #FFE5D9;"><div style="text-align: center; color: #999; font-size: 0.7rem;">🍽️</div></div>`;
+                        }
+                    } else {
+                        html += `<div class="time-slot">${timeSlot}</div>`;
+                        
+                        for (let day = 1; day <= 5; day++) {
+                            const courses = this.data.courses.filter(c => c.jour === day && c.heureDebut === timeSlot);
+
+                            if (courses.length > 0) {
+                                const course = courses[0];
+                                const date = weekDates[day - 1];
+                                const attendance = this.getAttendance(course.id, date);
+                                let statusIcon = '';
+                                if (attendance) {
+                                    statusIcon = attendance.statut === 'present' ? ' ✓' : ' ✗';
+                                }
+
+                                html += `
+                                    <div class="schedule-cell">
+                                        <div class="course-block" style="background: ${course.couleur}">
+                                            <div class="course-name">${course.matiere}${statusIcon}</div>
+                                            <div class="course-info">${course.heureDebut} - ${course.heureFin}</div>
+                                            <div class="course-info">${course.type} - ${course.salle || 'N/A'}</div>
+                                        </div>
+                                    </div>
+                                `;
+                            } else {
+                                html += '<div class="schedule-cell"></div>';
+                            }
+                        }
+                    }
+                });
+
+                html += '</div>';
+                container.innerHTML = html;
+            },
+
+            renderDashboardMatieres() {
+                const container = document.getElementById('dashboard-matieres');
+                const matieres = this.getMatiereStats();
+
+                if (matieres.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📚</div>
+                            <div class="empty-state-title">Aucune matière</div>
+                            <div class="empty-state-text">Ajoutez des cours pour commencer le suivi</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                matieres.forEach(matiere => {
+                    const lowAlert = matiere.rate < 75 ? `<div class="alert-low">⚠ Assiduité faible</div>` : '';
+                    
+                    html += `
+                        <div class="matiere-card" style="border-left: 6px solid ${matiere.couleur};">
+                            <div class="matiere-header">
+                                <div class="matiere-name">${matiere.name}</div>
+                                <div class="matiere-percentage">${matiere.rate}%</div>
+                            </div>
+                            <div class="matiere-stats">
+                                <div class="matiere-stat">
+                                    <div class="matiere-stat-value">${matiere.present}</div>
+                                    <div class="matiere-stat-label">Présent</div>
+                                </div>
+                                <div class="matiere-stat">
+                                    <div class="matiere-stat-value">${matiere.absent}</div>
+                                    <div class="matiere-stat-label">Absent</div>
+                                </div>
+                                <div class="matiere-stat">
+                                    <div class="matiere-stat-value">${matiere.total}</div>
+                                    <div class="matiere-stat-label">Total</div>
+                                </div>
+                            </div>
+                            ${lowAlert}
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+            },
+
+            getMatiereStats() {
+                const matieres = {};
+                
+                this.data.courses.forEach(course => {
+                    if (!matieres[course.matiere]) {
+                        matieres[course.matiere] = {
+                            name: course.matiere,
+                            couleur: course.couleur,
+                            present: 0,
+                            absent: 0,
+                            total: 0
+                        };
+                    }
+                });
+
+                this.data.attendances.forEach(att => {
+                    const course = this.data.courses.find(c => c.id === att.coursId);
+                    if (course && matieres[course.matiere]) {
+                        matieres[course.matiere].total++;
+                        if (att.statut === 'present') matieres[course.matiere].present++;
+                        if (att.statut === 'absent') matieres[course.matiere].absent++;
+                    }
+                });
+
+                return Object.values(matieres).map(m => ({
+                    ...m,
+                    rate: m.total > 0 ? Math.round((m.present / m.total) * 100) : 0
+                }));
+            },
+
+            // SCHEDULE
+            renderSchedule() {
+                const container = document.getElementById('schedule-grid');
+                let html = '';
+
+                // Headers
+                html += '<div class="schedule-header">Heure</div>';
+                ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'].forEach(day => {
+                    html += `<div class="schedule-header">${day}</div>`;
+                });
+
+                // Time slots (1h20 slots)
+                const timeSlots = [
+                    '08:00',
+                    '09:30',
+                    '11:00',
+                    '12:20', // Pause déjeuner
+                    '14:00',
+                    '15:30',
+                    '17:00'
+                ];
+
+                timeSlots.forEach((timeSlot, slotIndex) => {
+                    const isPause = timeSlot === '12:20';
+                    
+                    if (isPause) {
+                        html += `<div class="time-slot" style="background: #FFE5D9; color: var(--primary);">PAUSE</div>`;
+                        for (let day = 1; day <= 5; day++) {
+                            html += `<div class="schedule-cell" style="background: #FFE5D9;"><div style="text-align: center; color: #999; padding: 1rem;">🍽️ Déjeuner</div></div>`;
+                        }
+                    } else {
+                        html += `<div class="time-slot">${timeSlot}</div>`;
+                        
+                        for (let day = 1; day <= 5; day++) {
+                            const courses = this.data.courses.filter(c => c.jour === day && c.heureDebut === timeSlot);
+
+                            if (courses.length > 0) {
+                                const course = courses[0];
+                                html += `
+                                    <div class="schedule-cell">
+                                        <div class="course-block" style="background: ${course.couleur}" onclick="app.editCourse('${course.id}')">
+                                            <div class="course-name">${course.matiere}</div>
+                                            <div class="course-info">${course.heureDebut} - ${course.heureFin}</div>
+                                            <div class="course-info">${course.type} - ${course.salle || 'N/A'}</div>
+                                        </div>
+                                    </div>
+                                `;
+                            } else {
+                                html += `<div class="schedule-cell" onclick="app.openAddCourseModal(${day}, '${timeSlot}')"></div>`;
+                            }
+                        }
+                    }
+                });
+
+                container.innerHTML = html;
+            },
+
+            // COURSE MANAGEMENT
+            openAddCourseModal(jour = 1, timeSlot = '08:00') {
+                document.getElementById('modal-course-title').textContent = 'Ajouter un cours';
+                document.getElementById('form-course').reset();
+                document.getElementById('course-id').value = '';
+                document.getElementById('course-jour').value = jour;
+                
+                // Calculate end time (1h20 later)
+                const endTime = this.calculateEndTime(timeSlot);
+                document.getElementById('course-debut').value = timeSlot;
+                document.getElementById('course-fin').value = endTime;
+                
+                document.getElementById('btn-delete-course').style.display = 'none';
+                this.data.selectedColor = this.colors[0];
+                this.renderColorPicker();
+                document.getElementById('modal-course').classList.add('active');
+            },
+
+            calculateEndTime(startTime) {
+                const [hours, minutes] = startTime.split(':').map(Number);
+                let endHours = hours + 1;
+                let endMinutes = minutes + 20;
+                
+                if (endMinutes >= 60) {
+                    endHours += 1;
+                    endMinutes -= 60;
+                }
+                
+                return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+            },
+
+            updateEndTime() {
+                const startTime = document.getElementById('course-debut').value;
+                const endTime = this.calculateEndTime(startTime);
+                document.getElementById('course-fin').value = endTime;
+            },
+
+            editCourse(id) {
+                const course = this.data.courses.find(c => c.id === id);
+                if (!course) return;
+
+                document.getElementById('modal-course-title').textContent = 'Modifier le cours';
+                document.getElementById('course-id').value = course.id;
+                document.getElementById('course-matiere').value = course.matiere;
+                document.getElementById('course-jour').value = course.jour;
+                document.getElementById('course-debut').value = course.heureDebut;
+                document.getElementById('course-fin').value = course.heureFin;
+                document.getElementById('course-salle').value = course.salle || '';
+                document.getElementById('course-type').value = course.type;
+                this.data.selectedColor = course.couleur;
+                this.renderColorPicker();
+                document.getElementById('btn-delete-course').style.display = 'block';
+                document.getElementById('modal-course').classList.add('active');
+            },
+
+            saveCourse(event) {
+                event.preventDefault();
+                
+                const id = document.getElementById('course-id').value || this.generateId();
+                const course = {
+                    id,
+                    matiere: document.getElementById('course-matiere').value,
+                    jour: parseInt(document.getElementById('course-jour').value),
+                    heureDebut: document.getElementById('course-debut').value,
+                    heureFin: document.getElementById('course-fin').value,
+                    salle: document.getElementById('course-salle').value,
+                    type: document.getElementById('course-type').value,
+                    couleur: this.data.selectedColor
+                };
+
+                const index = this.data.courses.findIndex(c => c.id === id);
+                if (index >= 0) {
+                    this.data.courses[index] = course;
+                } else {
+                    this.data.courses.push(course);
+                }
+
+                this.saveData();
+                this.closeModal('modal-course');
+                this.render();
+            },
+
+            deleteCourse() {
+                const id = document.getElementById('course-id').value;
+                if (!id) return;
+
+                if (confirm('Supprimer ce cours et toutes les présences associées ?')) {
+                    this.data.courses = this.data.courses.filter(c => c.id !== id);
+                    this.data.attendances = this.data.attendances.filter(a => a.coursId !== id);
+                    this.saveData();
+                    this.closeModal('modal-course');
+                    this.render();
+                }
+            },
+
+            // ATTENDANCE
+            renderHistorique() {
+                const container = document.getElementById('calendar-container');
+                const weekDates = this.getWeekDates(this.getCurrentWeekDate());
+
+                let html = '<div class="calendar-grid">';
+
+                weekDates.forEach((date, index) => {
+                    const dayName = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven'][index];
+                    const courses = this.getCoursesForDay(index + 1, date);
+
+                    html += `
+                        <div class="calendar-day">
+                            <div class="calendar-day-header">
+                                ${dayName} ${date.getDate()}/${date.getMonth() + 1}
+                            </div>
+                            <div class="calendar-courses">
+                    `;
+
+                    if (courses.length === 0) {
+                        html += '<div style="padding: 1rem; color: #999; font-size: 0.8rem;">Pas de cours</div>';
+                    } else {
+                        courses.forEach(course => {
+                            const attendance = this.getAttendance(course.id, date);
+                            const statusClass = attendance ? attendance.statut : '';
+                            const statusText = attendance 
+                                ? (attendance.statut === 'present' ? '✓' : '✗')
+                                : '?';
+
+                            html += `
+                                <div class="calendar-course ${statusClass}" 
+                                     onclick="app.openAttendanceModal('${course.id}', '${date.toISOString()}')"
+                                     style="border-left-color: ${course.couleur}">
+                                    <strong>${course.matiere}</strong><br>
+                                    ${course.heureDebut} - ${course.type} ${statusText}
+                                </div>
+                            `;
+                        });
+                    }
+
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+                container.innerHTML = html;
+            },
+
+            openAttendanceModal(courseId, dateStr) {
+                this.data.selectedCourse = courseId;
+                this.data.selectedDate = dateStr;
+                
+                const course = this.data.courses.find(c => c.id === courseId);
+                const date = new Date(dateStr);
+                
+                document.getElementById('modal-attendance-title').textContent = 
+                    `${course.matiere} - ${date.toLocaleDateString('fr-FR')}`;
+                
+                document.getElementById('modal-attendance').classList.add('active');
+            },
+
+            markAttendance(statut) {
+                const attendance = {
+                    id: this.generateId(),
+                    coursId: this.data.selectedCourse,
+                    date: this.data.selectedDate,
+                    statut
+                };
+
+                // Remove existing attendance for this course and date
+                this.data.attendances = this.data.attendances.filter(a => 
+                    !(a.coursId === attendance.coursId && a.date === attendance.date)
+                );
+
+                this.data.attendances.push(attendance);
+                this.saveData();
+                this.closeModal('modal-attendance');
+                this.renderHistorique();
+                this.renderDashboard();
+            },
+
+            getAttendance(courseId, date) {
+                const dateStr = date.toISOString().split('T')[0];
+                return this.data.attendances.find(a => 
+                    a.coursId === courseId && a.date.startsWith(dateStr)
+                );
+            },
+
+            getCoursesForDay(dayNum, date) {
+                return this.data.courses.filter(c => c.jour === dayNum);
+            },
+
+            // STATISTICS
+            renderStatistics() {
+                this.renderChartByMatiere();
+                this.renderChartEvolution();
+                this.renderChartRepartition();
+            },
+
+            renderChartByMatiere() {
+                const ctx = document.getElementById('chart-by-matiere');
+                if (this.chartByMatiere) this.chartByMatiere.destroy();
+
+                const matieres = this.getMatiereStats();
+                
+                this.chartByMatiere = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: matieres.map(m => m.name),
+                        datasets: [{
+                            label: 'Taux de présence (%)',
+                            data: matieres.map(m => m.rate),
+                            backgroundColor: matieres.map(m => m.couleur),
+                            borderColor: '#1A1A1D',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    callback: value => value + '%'
+                                }
+                            }
+                        }
+                    }
+                });
+            },
+
+            renderChartEvolution() {
+                const ctx = document.getElementById('chart-evolution');
+                if (this.chartEvolution) this.chartEvolution.destroy();
+
+                // Group attendances by week
+                const weeklyData = this.getWeeklyAttendanceData();
+
+                this.chartEvolution = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: weeklyData.labels,
+                        datasets: [{
+                            label: 'Taux de présence hebdomadaire (%)',
+                            data: weeklyData.rates,
+                            borderColor: '#FF6B35',
+                            backgroundColor: 'rgba(255, 107, 53, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { display: true }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    callback: value => value + '%'
+                                }
+                            }
+                        }
+                    }
+                });
+            },
+
+            renderChartRepartition() {
+                const ctx = document.getElementById('chart-repartition');
+                if (this.chartRepartition) this.chartRepartition.destroy();
+
+                const present = this.data.attendances.filter(a => a.statut === 'present').length;
+                const absent = this.data.attendances.filter(a => a.statut === 'absent').length;
+
+                this.chartRepartition = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Présent', 'Absent'],
+                        datasets: [{
+                            data: [present, absent],
+                            backgroundColor: ['#06D6A0', '#EF476F'],
+                            borderColor: '#1A1A1D',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            },
+
+            getWeeklyAttendanceData() {
+                const weeks = {};
+                
+                this.data.attendances.forEach(att => {
+                    const date = new Date(att.date);
+                    const weekStart = this.getWeekStart(date);
+                    const weekKey = weekStart.toISOString().split('T')[0];
+                    
+                    if (!weeks[weekKey]) {
+                        weeks[weekKey] = { present: 0, total: 0 };
+                    }
+                    
+                    weeks[weekKey].total++;
+                    if (att.statut === 'present') weeks[weekKey].present++;
+                });
+
+                const sorted = Object.entries(weeks).sort(([a], [b]) => a.localeCompare(b));
+                
+                return {
+                    labels: sorted.map(([key]) => {
+                        const date = new Date(key);
+                        return `Sem. ${this.getWeekNumber(date)}`;
+                    }),
+                    rates: sorted.map(([, data]) => 
+                        Math.round((data.present / data.total) * 100)
+                    )
+                };
+            },
+
+            // REVISIONS
+            renderRevisions() {
+                this.updateRevisionStats();
+                this.renderRevisionHistory();
+                this.renderRevisionCharts();
+            },
+
+            startRevision() {
+                // Get list of matieres
+                const matieres = [...new Set(this.data.courses.map(c => c.matiere))];
+                
+                if (matieres.length === 0) {
+                    alert('⚠ Vous devez d\'abord ajouter des cours dans votre emploi du temps !');
+                    return;
+                }
+
+                // Show matiere selector
+                const container = document.getElementById('revision-matiere-list');
+                let html = '<div class="matiere-selector">';
+                
+                matieres.forEach(matiere => {
+                    const course = this.data.courses.find(c => c.matiere === matiere);
+                    html += `
+                        <div class="matiere-selector-item" 
+                             style="border-color: ${course.couleur}"
+                             onclick="app.selectMatiereAndStart('${matiere}', '${course.couleur}')">
+                            ${matiere}
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                container.innerHTML = html;
+                document.getElementById('modal-revision').classList.add('active');
+            },
+
+            selectMatiereAndStart(matiere, couleur) {
+                this.closeModal('modal-revision');
+                
+                this.data.currentRevision = {
+                    matiere: matiere,
+                    couleur: couleur,
+                    startTime: Date.now()
+                };
+
+                // Update UI
+                document.getElementById('btn-start-revision').style.display = 'none';
+                document.getElementById('btn-stop-revision').style.display = 'inline-block';
+                document.getElementById('revision-matiere-display').textContent = matiere;
+                document.getElementById('revision-matiere-display').style.color = couleur;
+                
+                // Start timer
+                this.data.revisionStartTime = Date.now();
+                this.data.revisionTimer = setInterval(() => {
+                    const elapsed = Date.now() - this.data.revisionStartTime;
+                    document.getElementById('revision-timer-display').textContent = this.formatDuration(elapsed);
+                    this.updateGrowthStage(elapsed);
+                }, 1000);
+
+                document.getElementById('revision-timer-display').classList.add('timer-active');
+                this.updateGrowthStage(0);
+            },
+
+            updateGrowthStage(elapsed) {
+                const minutes = Math.floor(elapsed / 60000);
+                const growthStage = document.getElementById('growth-stage');
+                const growthLabel = document.getElementById('growth-label');
+                const growthMessage = document.getElementById('growth-message');
+
+                let stage = 0;
+                let label = '';
+                let message = '';
+
+                if (minutes >= 240) { // 4h+
+                    stage = 7;
+                    label = '🏗️ BURJ KHALIFA 👑';
+                    message = 'LÉGENDAIRE ! TU AS CONSTRUIT UN MONUMENT ABSOLU ! 🌟';
+                } else if (minutes >= 180) { // 3h
+                    stage = 6;
+                    label = '🔥 TOUR ÉPIQUE 🔥';
+                    message = 'INCROYABLE ! Concentration de malade !';
+                } else if (minutes >= 120) { // 2h
+                    stage = 5;
+                    label = '⭐ GRATTE-CIEL ⭐';
+                    message = 'DEUX HEURES ! Tu domines la ville !';
+                } else if (minutes >= 60) { // 1h
+                    stage = 4;
+                    label = '🏆 IMMEUBLE 4 ÉTAGES 🏆';
+                    message = 'UNE HEURE ! Architecture solide !';
+                } else if (minutes >= 30) { // 30min
+                    stage = 3;
+                    label = '🏗️ PETIT IMMEUBLE';
+                    message = 'Ça monte ! 2 étages construits !';
+                } else if (minutes >= 15) { // 15min
+                    stage = 2;
+                    label = '🧱 REZ-DE-CHAUSSÉE';
+                    message = 'Premier étage posé ! Continue !';
+                } else if (minutes >= 5) { // 5min
+                    stage = 1;
+                    label = '⚒️ FONDATIONS';
+                    message = 'Les bases sont là ! C\'est parti !';
+                } else { // < 5min
+                    stage = 0;
+                    label = '📐 PLANS';
+                    message = 'Chaque seconde construit ton succès ! 💪';
+                }
+
+                // Remove all stage classes
+                growthStage.className = 'growth-stage';
+                
+                // Add new stage class
+                growthStage.classList.add(`stage-${stage}`);
+
+                // Update labels
+                growthLabel.textContent = label;
+                growthMessage.textContent = message;
+
+                // Apply matiere color to label
+                const matiereColor = this.data.currentRevision?.couleur || '#FF6B35';
+                growthLabel.style.color = matiereColor;
+            },
+
+            stopRevision() {
+                if (!this.data.currentRevision) return;
+
+                clearInterval(this.data.revisionTimer);
+                
+                const duration = Date.now() - this.data.revisionStartTime;
+                
+                // Save revision session
+                const revision = {
+                    id: this.generateId(),
+                    matiere: this.data.currentRevision.matiere,
+                    couleur: this.data.currentRevision.couleur,
+                    startTime: this.data.currentRevision.startTime,
+                    endTime: Date.now(),
+                    duration: duration
+                };
+
+                this.data.revisions.push(revision);
+                this.saveData();
+
+                // Reset UI
+                document.getElementById('btn-start-revision').style.display = 'inline-block';
+                document.getElementById('btn-stop-revision').style.display = 'none';
+                document.getElementById('revision-matiere-display').textContent = '--';
+                document.getElementById('revision-timer-display').textContent = '00:00:00';
+                document.getElementById('revision-timer-display').classList.remove('timer-active');
+
+                // Reset growth visual
+                const growthStage = document.getElementById('growth-stage');
+                growthStage.className = 'growth-stage stage-0';
+                document.getElementById('growth-label').textContent = 'Prêt à commencer';
+                document.getElementById('growth-label').style.color = 'var(--secondary)';
+                document.getElementById('growth-message').textContent = 'Lance une révision pour voir la magie opérer ! 🚀';
+
+                this.data.currentRevision = null;
+                this.data.revisionTimer = null;
+                this.data.revisionStartTime = null;
+
+                // Update display
+                this.renderRevisions();
+
+                alert('✓ Session de révision enregistrée : ' + this.formatDuration(duration));
+            },
+
+            updateRevisionStats() {
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const weekStart = this.getWeekStart(now);
+                const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+                let todayTotal = 0;
+                let weekTotal = 0;
+                let monthTotal = 0;
+                let total = 0;
+
+                this.data.revisions.forEach(rev => {
+                    const revDate = new Date(rev.startTime);
+                    const revDateOnly = new Date(revDate.getFullYear(), revDate.getMonth(), revDate.getDate());
+
+                    total += rev.duration;
+
+                    if (revDateOnly.getTime() === today.getTime()) {
+                        todayTotal += rev.duration;
+                    }
+
+                    if (revDate >= weekStart) {
+                        weekTotal += rev.duration;
+                    }
+
+                    if (revDate >= monthStart) {
+                        monthTotal += rev.duration;
+                    }
+                });
+
+                document.getElementById('revision-today').textContent = this.formatDurationShort(todayTotal);
+                document.getElementById('revision-week').textContent = this.formatDurationShort(weekTotal);
+                document.getElementById('revision-month').textContent = this.formatDurationShort(monthTotal);
+                document.getElementById('revision-total').textContent = this.formatDurationShort(total);
+            },
+
+            renderRevisionHistory() {
+                const container = document.getElementById('revision-history');
+                
+                if (this.data.revisions.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📚</div>
+                            <div class="empty-state-title">Aucune révision</div>
+                            <div class="empty-state-text">Commence à tracker tes révisions !</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Sort by most recent first
+                const sorted = [...this.data.revisions].sort((a, b) => b.startTime - a.startTime);
+                
+                let html = '';
+                sorted.forEach(rev => {
+                    const date = new Date(rev.startTime);
+                    const dateStr = date.toLocaleDateString('fr-FR', { 
+                        weekday: 'short', 
+                        day: 'numeric', 
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+
+                    html += `
+                        <div class="revision-session" style="border-left-color: ${rev.couleur}">
+                            <div class="revision-session-info">
+                                <div class="revision-session-matiere">${rev.matiere}</div>
+                                <div class="revision-session-time">${dateStr}</div>
+                            </div>
+                            <div class="revision-session-duration">${this.formatDurationShort(rev.duration)}</div>
+                            <button class="revision-session-delete" onclick="app.deleteRevision('${rev.id}')">🗑</button>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+            },
+
+            deleteRevision(id) {
+                if (confirm('Supprimer cette session de révision ?')) {
+                    this.data.revisions = this.data.revisions.filter(r => r.id !== id);
+                    this.saveData();
+                    this.renderRevisions();
+                }
+            },
+
+            renderRevisionCharts() {
+                this.renderChartRevisionMatiere();
+                this.renderChartRevisionDaily();
+            },
+
+            renderChartRevisionMatiere() {
+                const ctx = document.getElementById('chart-revision-matiere');
+                if (this.chartRevisionMatiere) this.chartRevisionMatiere.destroy();
+
+                const weekStart = this.getWeekStart(new Date());
+                const weekRevisions = this.data.revisions.filter(r => new Date(r.startTime) >= weekStart);
+
+                const byMatiere = {};
+                weekRevisions.forEach(rev => {
+                    if (!byMatiere[rev.matiere]) {
+                        byMatiere[rev.matiere] = { total: 0, couleur: rev.couleur };
+                    }
+                    byMatiere[rev.matiere].total += rev.duration;
+                });
+
+                const matieres = Object.keys(byMatiere);
+                const durations = matieres.map(m => Math.round(byMatiere[m].total / 3600000 * 10) / 10); // hours
+                const colors = matieres.map(m => byMatiere[m].couleur);
+
+                this.chartRevisionMatiere = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: matieres,
+                        datasets: [{
+                            label: 'Heures de révision',
+                            data: durations,
+                            backgroundColor: colors,
+                            borderColor: '#1A1A1D',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: value => value + 'h'
+                                }
+                            }
+                        }
+                    }
+                });
+            },
+
+            renderChartRevisionDaily() {
+                const ctx = document.getElementById('chart-revision-daily');
+                if (this.chartRevisionDaily) this.chartRevisionDaily.destroy();
+
+                // Get last 7 days
+                const days = [];
+                const labels = [];
+                const now = new Date();
+                
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date(now);
+                    date.setDate(date.getDate() - i);
+                    days.push(new Date(date.getFullYear(), date.getMonth(), date.getDate()));
+                    labels.push(date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' }));
+                }
+
+                const durations = days.map(day => {
+                    const dayRevisions = this.data.revisions.filter(r => {
+                        const revDate = new Date(r.startTime);
+                        const revDateOnly = new Date(revDate.getFullYear(), revDate.getMonth(), revDate.getDate());
+                        return revDateOnly.getTime() === day.getTime();
+                    });
+                    const total = dayRevisions.reduce((sum, r) => sum + r.duration, 0);
+                    return Math.round(total / 3600000 * 10) / 10; // hours
+                });
+
+                this.chartRevisionDaily = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Heures de révision',
+                            data: durations,
+                            borderColor: '#FF6B35',
+                            backgroundColor: 'rgba(255, 107, 53, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { display: true }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: value => value + 'h'
+                                }
+                            }
+                        }
+                    }
+                });
+            },
+
+            formatDuration(ms) {
+                const seconds = Math.floor(ms / 1000);
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                const secs = seconds % 60;
+                
+                return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            },
+
+            formatDurationShort(ms) {
+                const totalMinutes = Math.floor(ms / 60000);
+                const hours = Math.floor(totalMinutes / 60);
+                const minutes = totalMinutes % 60;
+                
+                if (hours > 0) {
+                    return `${hours}h${minutes.toString().padStart(2, '0')}`;
+                }
+                return `${minutes}min`;
+            },
+
+            // UTILS
+            generateId() {
+                return Date.now().toString(36) + Math.random().toString(36).substr(2);
+            },
+
+            getWeekStart(date) {
+                const d = new Date(date);
+                const day = d.getDay();
+                const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+                const weekStart = new Date(d.setDate(diff));
+                weekStart.setHours(0, 0, 0, 0);
+                return weekStart;
+            },
+
+            getWeekDates(startDate) {
+                const weekStart = this.getWeekStart(startDate);
+                const dates = [];
+                for (let i = 0; i < 5; i++) {
+                    const date = new Date(weekStart);
+                    date.setDate(weekStart.getDate() + i);
+                    dates.push(date);
+                }
+                return dates;
+            },
+
+            getCurrentWeekDate() {
+                const now = new Date();
+                const offset = this.data.currentWeekOffset * 7;
+                const targetDate = new Date(now);
+                targetDate.setDate(now.getDate() + offset);
+                return this.getWeekStart(targetDate);
+            },
+
+            changeWeek(direction) {
+                if (direction === 0) {
+                    this.data.currentWeekOffset = 0;
+                } else {
+                    this.data.currentWeekOffset += direction;
+                }
+                this.renderHistorique();
+            },
+
+            getWeekNumber(date) {
+                const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+                const dayNum = d.getUTCDay() || 7;
+                d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+                const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+                return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+            },
+
+            renderColorPicker() {
+                const container = document.getElementById('color-picker');
+                container.innerHTML = this.colors.map(color => 
+                    `<div class="color-option ${color === this.data.selectedColor ? 'selected' : ''}" 
+                          style="background: ${color}" 
+                          onclick="app.selectColor('${color}')"></div>`
+                ).join('');
+            },
+
+            selectColor(color) {
+                this.data.selectedColor = color;
+                this.renderColorPicker();
+            },
+
+            closeModal(modalId) {
+                document.getElementById(modalId).classList.remove('active');
+            },
+
+            // DATA MANAGEMENT
+            exportData() {
+                const data = {
+                    courses: this.data.courses,
+                    attendances: this.data.attendances,
+                    exportDate: new Date().toISOString()
+                };
+
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `tracku-export-${Date.now()}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            },
+
+            importData() {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json,application/json';
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const data = JSON.parse(event.target.result);
+                            if (data.courses && data.attendances) {
+                                if (confirm('Remplacer toutes les données actuelles par celles du fichier importé ?')) {
+                                    this.data.courses = data.courses;
+                                    this.data.attendances = data.attendances;
+                                    this.data.revisions = data.revisions || [];
+                                    this.saveData();
+                                    
+                                    // Rerender all sections
+                                    this.renderDashboard();
+                                    this.renderSchedule();
+                                    this.renderHistorique();
+                                    this.renderRevisions();
+                                    this.renderStatistics();
+                                    
+                                    alert('✓ Import réussi ! ' + data.courses.length + ' cours, ' + data.attendances.length + ' présences et ' + (data.revisions ? data.revisions.length : 0) + ' révisions importés.');
+                                }
+                            } else {
+                                alert('⚠ Fichier invalide : le fichier doit contenir "courses" et "attendances"');
+                            }
+                        } catch (err) {
+                            console.error('Erreur import:', err);
+                            alert('⚠ Erreur lors de l\'import : ' + err.message);
+                        }
+                    };
+                    reader.onerror = () => {
+                        alert('⚠ Erreur lors de la lecture du fichier');
+                    };
+                    reader.readAsText(file);
+                };
+                input.click();
+            },
+
+            resetData() {
+                if (confirm('⚠️ ATTENTION : Supprimer toutes les données ? Cette action est irréversible.')) {
+                    if (confirm('Êtes-vous vraiment sûr ? Toutes vos données seront perdues.')) {
+                        localStorage.removeItem('tracku-data');
+                        this.data.courses = [];
+                        this.data.attendances = [];
+                        this.data.revisions = [];
+                        this.render();
+                        this.renderRevisions();
+                        alert('Données réinitialisées');
+                    }
+                }
+            }
+        };
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', () => {
+            app.init();
+        });
+    </script>
+</body>
+</html>
