@@ -1551,6 +1551,218 @@
             transform: translateY(-4px);
             box-shadow: 6px 6px 0 var(--dark);
         }
+
+        /* PLANIFICATEUR */
+        .plan-date-range {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: white;
+            border: 3px solid var(--dark);
+            box-shadow: 6px 6px 0 var(--dark);
+        }
+
+        body.dark-mode .plan-date-range {
+            background: #2A2A2D;
+            border-color: #F5F5F5;
+            box-shadow: 6px 6px 0 #F5F5F5;
+        }
+
+        .plan-date-range label {
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            color: var(--secondary);
+        }
+
+        .plan-calendar {
+            display: flex;
+            gap: 1rem;
+            overflow-x: auto;
+            padding-bottom: 1rem;
+        }
+
+        .plan-column {
+            min-width: 200px;
+            flex: 1;
+            background: white;
+            border: 3px solid var(--dark);
+            box-shadow: 6px 6px 0 var(--dark);
+            display: flex;
+            flex-direction: column;
+        }
+
+        body.dark-mode .plan-column {
+            background: #2A2A2D;
+            border-color: #F5F5F5;
+            box-shadow: 6px 6px 0 #F5F5F5;
+        }
+
+        .plan-column-header {
+            background: var(--dark);
+            color: var(--light);
+            padding: 0.75rem 1rem;
+            text-align: center;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+        }
+
+        .plan-column-header.today {
+            background: var(--primary);
+            color: white;
+        }
+
+        .plan-column-body {
+            padding: 0.75rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .plan-task {
+            background: white;
+            border: 2px solid var(--dark);
+            border-left: 5px solid var(--primary);
+            padding: 0.75rem;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        body.dark-mode .plan-task {
+            background: #1A1A1D;
+            border-color: #F5F5F5;
+        }
+
+        .plan-task.done {
+            background: rgba(6, 214, 160, 0.1);
+            border-color: var(--success);
+            border-left-color: var(--success);
+        }
+
+        .plan-task.done .plan-task-matiere {
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+
+        .plan-task.late {
+            background: rgba(239, 71, 111, 0.1);
+            border-color: var(--danger);
+            border-left-color: var(--danger);
+        }
+
+        .plan-task-matiere {
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+            color: var(--secondary);
+        }
+
+        body.dark-mode .plan-task-matiere {
+            color: #F5F5F5;
+        }
+
+        .plan-task-note {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+
+        body.dark-mode .plan-task-note {
+            color: #B0B0B0;
+        }
+
+        .plan-task-badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .plan-task-badge.late {
+            background: var(--danger);
+            color: white;
+        }
+
+        .plan-task-badge.done {
+            background: var(--success);
+            color: white;
+        }
+
+        .plan-task-badge.todo {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .plan-task-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .plan-btn {
+            border: 2px solid var(--dark);
+            padding: 0.3rem 0.6rem;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s ease;
+        }
+
+        .plan-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 2px 2px 0 var(--dark);
+        }
+
+        .plan-btn-done { background: var(--success); color: white; }
+        .plan-btn-late { background: var(--danger); color: white; }
+        .plan-btn-todo { background: var(--secondary); color: white; }
+        .plan-btn-edit { background: var(--accent); color: var(--dark); }
+        .plan-btn-del  { background: var(--danger); color: white; }
+
+        .plan-add-btn {
+            width: 100%;
+            background: transparent;
+            border: 2px dashed var(--grid);
+            padding: 0.75rem;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #999;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s ease;
+            margin-top: auto;
+        }
+
+        .plan-add-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(255, 107, 53, 0.05);
+        }
+
+        .plan-empty {
+            text-align: center;
+            padding: 2rem;
+            color: #999;
+            font-size: 0.8rem;
+        }
     </style>
 </head>
 <body>
@@ -1572,6 +1784,7 @@
                 <li class="nav-item" data-section="emploi">📅 Emploi du temps</li>
                 <li class="nav-item" data-section="historique">✓ Historique</li>
                 <li class="nav-item" data-section="revisions">📚 Révisions</li>
+                <li class="nav-item" data-section="planificateur">📋 Planificateur</li>
                 <li class="nav-item" data-section="statistiques">📈 Statistiques</li>
                 <li class="nav-item" data-section="parametres">⚙️ Paramètres</li>
             </ul>
@@ -1734,6 +1947,24 @@
                     <h2 class="chart-title">Évolution quotidienne (7 derniers jours)</h2>
                     <canvas id="chart-revision-daily"></canvas>
                 </div>
+            </section>
+
+            <!-- PLANIFICATEUR SECTION -->
+            <section id="planificateur" class="section">
+                <div class="page-header">
+                    <h1 class="page-title">Planificateur</h1>
+                    <p class="page-subtitle">Organisez vos révisions à l'avance</p>
+                </div>
+
+                <div class="plan-date-range">
+                    <label>Du</label>
+                    <input type="date" id="plan-date-start" class="form-input" style="width: auto;">
+                    <label>Au</label>
+                    <input type="date" id="plan-date-end" class="form-input" style="width: auto;">
+                    <button class="btn btn-small" onclick="app.renderPlanificateur()">Afficher</button>
+                </div>
+
+                <div id="plan-calendar" class="plan-calendar"></div>
             </section>
 
             <!-- STATISTIQUES SECTION -->
@@ -1969,12 +2200,47 @@
         </div>
     </div>
 
+    <!-- MODAL PLAN -->
+    <div id="modal-plan" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-plan-title">Ajouter une tâche</h2>
+                <button class="modal-close" onclick="app.closeModal('modal-plan')">×</button>
+            </div>
+            <form id="form-plan" onsubmit="app.savePlan(event)">
+                <input type="hidden" id="plan-id">
+
+                <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input type="date" id="plan-date" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Matière</label>
+                    <select id="plan-matiere" class="form-select" required></select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Notes / Ce que tu veux faire</label>
+                    <textarea id="plan-note" class="form-input" rows="4" placeholder="Ex: Chapitres 3 et 4, réviser les formules, faire les exercices p.45..."></textarea>
+                </div>
+
+                <div class="actions-bar">
+                    <button type="submit" class="btn btn-success">Enregistrer</button>
+                    <button type="button" class="btn btn-secondary" onclick="app.closeModal('modal-plan')">Annuler</button>
+                    <button type="button" id="btn-delete-plan" class="btn" style="background: var(--danger); margin-left: auto; display: none;" onclick="app.deletePlanFromModal()">Supprimer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         const app = {
             data: {
                 courses: [],
                 attendances: [],
                 revisions: [],
+                plans: [],
                 currentRevision: null,
                 revisionTimer: null,
                 revisionStartTime: null,
@@ -2004,6 +2270,7 @@
                 this.render();
                 this.setupAutoSave();
                 this.checkAuthState();
+                this.checkLateStatuses();
             },
 
             initFirebase() {
@@ -2171,6 +2438,7 @@
                     courses: this.data.courses,
                     attendances: this.data.attendances,
                     revisions: this.data.revisions,
+                    plans: this.data.plans,
                     lastSync: Date.now()
                 };
 
@@ -2189,6 +2457,7 @@
                         this.data.courses = cloudData.courses || [];
                         this.data.attendances = cloudData.attendances || [];
                         this.data.revisions = cloudData.revisions || [];
+                        this.data.plans = cloudData.plans || [];
                         
                         this.saveData(); // Save to localStorage
                         this.render();
@@ -2231,6 +2500,7 @@
                 if (section === 'emploi') this.renderSchedule();
                 if (section === 'historique') this.renderHistorique();
                 if (section === 'revisions') this.renderRevisions();
+                if (section === 'planificateur') this.renderPlanificateur();
                 if (section === 'statistiques') this.renderStatistics();
             },
 
@@ -2241,6 +2511,7 @@
                     this.data.courses = parsed.courses || [];
                     this.data.attendances = parsed.attendances || [];
                     this.data.revisions = parsed.revisions || [];
+                    this.data.plans = parsed.plans || [];
                 }
             },
 
@@ -2248,7 +2519,8 @@
                 localStorage.setItem('tracku-data', JSON.stringify({
                     courses: this.data.courses,
                     attendances: this.data.attendances,
-                    revisions: this.data.revisions
+                    revisions: this.data.revisions,
+                    plans: this.data.plans
                 }));
 
                 // Auto-sync to cloud if enabled
@@ -3410,6 +3682,8 @@
                 const data = {
                     courses: this.data.courses,
                     attendances: this.data.attendances,
+                    revisions: this.data.revisions,
+                    plans: this.data.plans,
                     exportDate: new Date().toISOString()
                 };
 
@@ -3466,6 +3740,203 @@
                 input.click();
             },
 
+            // PLANIFICATEUR
+            renderPlanificateur() {
+                this.checkLateStatuses();
+
+                const startInput = document.getElementById('plan-date-start');
+                const endInput = document.getElementById('plan-date-end');
+
+                // Initialiser les dates si vides (semaine courante par défaut)
+                if (!startInput.value) {
+                    const weekStart = this.getWeekStart(new Date());
+                    const weekEnd = new Date(weekStart);
+                    weekEnd.setDate(weekEnd.getDate() + 6);
+                    startInput.value = weekStart.toISOString().split('T')[0];
+                    endInput.value = weekEnd.toISOString().split('T')[0];
+                }
+
+                const startDate = new Date(startInput.value + 'T00:00:00');
+                const endDate = new Date(endInput.value + 'T00:00:00');
+
+                if (isNaN(startDate) || isNaN(endDate) || startDate > endDate) {
+                    document.getElementById('plan-calendar').innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📅</div>
+                            <div class="empty-state-title">Sélectionnez une plage de dates</div>
+                            <div class="empty-state-text">La date de fin doit être après la date de début</div>
+                        </div>`;
+                    return;
+                }
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const days = [];
+                const cur = new Date(startDate);
+                while (cur <= endDate) {
+                    days.push(new Date(cur));
+                    cur.setDate(cur.getDate() + 1);
+                }
+
+                let html = '';
+                days.forEach(day => {
+                    const dateStr = day.toISOString().split('T')[0];
+                    const isToday = day.getTime() === today.getTime();
+                    const dayLabel = day.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+                    const plans = this.getPlansByDate(dateStr);
+
+                    html += `<div class="plan-column">
+                        <div class="plan-column-header ${isToday ? 'today' : ''}">${dayLabel}${isToday ? ' ★' : ''}</div>
+                        <div class="plan-column-body">`;
+
+                    if (plans.length === 0) {
+                        html += `<div class="plan-empty">Rien de prévu</div>`;
+                    } else {
+                        plans.forEach(plan => {
+                            const badgeLabel = plan.statut === 'done' ? 'Fait' : plan.statut === 'late' ? 'Retard' : 'À faire';
+                            html += `
+                            <div class="plan-task ${plan.statut}" style="border-left-color: ${plan.couleur}">
+                                <div class="plan-task-matiere">${plan.matiere}</div>
+                                ${plan.note ? `<div class="plan-task-note">${this.escapeHtml(plan.note)}</div>` : ''}
+                                <span class="plan-task-badge ${plan.statut}">${badgeLabel}</span>
+                                <div class="plan-task-actions">
+                                    ${plan.statut !== 'done' ? `<button class="plan-btn plan-btn-done" onclick="app.markPlanStatus('${plan.id}', 'done')">✓ Fait</button>` : ''}
+                                    ${plan.statut === 'done' ? `<button class="plan-btn plan-btn-todo" onclick="app.markPlanStatus('${plan.id}', 'todo')">↩ À faire</button>` : ''}
+                                    ${plan.statut === 'todo' ? `<button class="plan-btn plan-btn-late" onclick="app.markPlanStatus('${plan.id}', 'late')">⏰ Retard</button>` : ''}
+                                    <button class="plan-btn plan-btn-edit" onclick="app.editPlan('${plan.id}')">✎ Modifier</button>
+                                </div>
+                            </div>`;
+                        });
+                    }
+
+                    html += `<button class="plan-add-btn" onclick="app.openAddPlanModal('${dateStr}')">+ Ajouter</button>
+                        </div>
+                    </div>`;
+                });
+
+                document.getElementById('plan-calendar').innerHTML = html;
+            },
+
+            getPlansByDate(dateStr) {
+                return this.data.plans.filter(p => p.date === dateStr);
+            },
+
+            checkLateStatuses() {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                let changed = false;
+                this.data.plans.forEach(plan => {
+                    if (plan.statut === 'todo') {
+                        const planDate = new Date(plan.date + 'T00:00:00');
+                        if (planDate < today) {
+                            plan.statut = 'late';
+                            changed = true;
+                        }
+                    }
+                });
+                if (changed) this.saveData();
+            },
+
+            openAddPlanModal(dateStr) {
+                document.getElementById('modal-plan-title').textContent = 'Ajouter une tâche';
+                document.getElementById('form-plan').reset();
+                document.getElementById('plan-id').value = '';
+                document.getElementById('plan-date').value = dateStr;
+                document.getElementById('btn-delete-plan').style.display = 'none';
+                this.populatePlanMatiereSelect(null);
+                document.getElementById('modal-plan').classList.add('active');
+            },
+
+            editPlan(id) {
+                const plan = this.data.plans.find(p => p.id === id);
+                if (!plan) return;
+                document.getElementById('modal-plan-title').textContent = 'Modifier la tâche';
+                document.getElementById('plan-id').value = plan.id;
+                document.getElementById('plan-date').value = plan.date;
+                document.getElementById('plan-note').value = plan.note || '';
+                document.getElementById('btn-delete-plan').style.display = 'block';
+                this.populatePlanMatiereSelect(plan.matiere);
+                document.getElementById('modal-plan').classList.add('active');
+            },
+
+            populatePlanMatiereSelect(selectedMatiere) {
+                const matieres = [...new Set(this.data.courses.map(c => c.matiere))];
+                const select = document.getElementById('plan-matiere');
+                if (matieres.length === 0) {
+                    select.innerHTML = '<option value="">Aucune matière (ajoutez des cours d\'abord)</option>';
+                    return;
+                }
+                select.innerHTML = matieres.map(m => {
+                    const course = this.data.courses.find(c => c.matiere === m);
+                    return `<option value="${m}" data-couleur="${course.couleur}" ${m === selectedMatiere ? 'selected' : ''}>${m}</option>`;
+                }).join('');
+            },
+
+            savePlan(event) {
+                event.preventDefault();
+                const id = document.getElementById('plan-id').value || this.generateId();
+                const matiereSelect = document.getElementById('plan-matiere');
+                const selectedOption = matiereSelect.options[matiereSelect.selectedIndex];
+                const couleur = selectedOption ? selectedOption.dataset.couleur : '#FF6B35';
+
+                const plan = {
+                    id,
+                    date: document.getElementById('plan-date').value,
+                    matiere: matiereSelect.value,
+                    couleur,
+                    note: document.getElementById('plan-note').value,
+                    statut: 'todo',
+                    createdAt: Date.now()
+                };
+
+                // Conserver le statut existant si modification
+                const existing = this.data.plans.find(p => p.id === id);
+                if (existing) {
+                    plan.statut = existing.statut;
+                    plan.createdAt = existing.createdAt;
+                }
+
+                // Vérifier retard immédiat
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const planDate = new Date(plan.date + 'T00:00:00');
+                if (plan.statut === 'todo' && planDate < today) plan.statut = 'late';
+
+                const index = this.data.plans.findIndex(p => p.id === id);
+                if (index >= 0) {
+                    this.data.plans[index] = plan;
+                } else {
+                    this.data.plans.push(plan);
+                }
+
+                this.saveData();
+                this.closeModal('modal-plan');
+                this.renderPlanificateur();
+            },
+
+            markPlanStatus(id, statut) {
+                const plan = this.data.plans.find(p => p.id === id);
+                if (!plan) return;
+                plan.statut = statut;
+                this.saveData();
+                this.renderPlanificateur();
+            },
+
+            deletePlanFromModal() {
+                const id = document.getElementById('plan-id').value;
+                if (!id) return;
+                if (confirm('Supprimer cette tâche ?')) {
+                    this.data.plans = this.data.plans.filter(p => p.id !== id);
+                    this.saveData();
+                    this.closeModal('modal-plan');
+                    this.renderPlanificateur();
+                }
+            },
+
+            escapeHtml(str) {
+                return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            },
+
             resetData() {
                 if (confirm('⚠️ ATTENTION : Supprimer toutes les données ? Cette action est irréversible.')) {
                     if (confirm('Êtes-vous vraiment sûr ? Toutes vos données seront perdues.')) {
@@ -3473,6 +3944,7 @@
                         this.data.courses = [];
                         this.data.attendances = [];
                         this.data.revisions = [];
+                        this.data.plans = [];
                         this.render();
                         this.renderRevisions();
                         alert('Données réinitialisées');
