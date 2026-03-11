@@ -47,6 +47,9 @@ Stockage : `localStorage` clé `tracku-data` + Firebase Realtime DB (optionnel).
 
 // Révisions (sessions chrono)
 { id, matiere, couleur, startTime: timestamp, endTime: timestamp, duration: ms }
+
+// Plans (planificateur)
+{ id, date: "YYYY-MM-DD", matiere, couleur, note: string, statut: "todo"|"done"|"late", createdAt: timestamp }
 ```
 
 ## Sections de l'app
@@ -57,6 +60,7 @@ Stockage : `localStorage` clé `tracku-data` + Firebase Realtime DB (optionnel).
 | Emploi du temps | `#emploi` | `renderSchedule()` |
 | Historique présences | `#historique` | `renderHistorique()` |
 | Révisions / chrono | `#revisions` | `renderRevisions()` |
+| Planificateur | `#planificateur` | `renderPlanificateur()` |
 | Statistiques | `#statistiques` | `renderStatistics()` |
 | Paramètres / sync | `#parametres` | — |
 
@@ -101,9 +105,16 @@ Animation de construction de bâtiment selon le temps écoulé :
 - Les IDs sont générés avec `Date.now().toString(36) + Math.random().toString(36).substr(2)`
 - Auto-save toutes les 30 secondes + sync cloud automatique si connecté
 
+## Planificateur (feature ajoutée)
+
+- Sélecteur de plage de dates libre → colonnes par jour
+- Tâche = `{ matiere, note, statut: todo|done|late }`
+- `checkLateStatuses()` appelé au `init()` et à chaque rendu : toute tâche `todo` dont la date est passée → `late`
+- Méthodes : `renderPlanificateur`, `openAddPlanModal(dateStr)`, `editPlan(id)`, `savePlan(event)`, `markPlanStatus(id, statut)`, `deletePlanFromModal`, `getPlansByDate(dateStr)`, `checkLateStatuses`
+- La couleur de la tâche est héritée de la matière via `data-couleur` sur l'option du select
+
 ## Points d'attention
 
 - Seul le premier cours par créneau est affiché (pas de gestion des conflits d'horaires)
-- `exportData()` n'exporte pas les révisions (bug mineur — `revisions` absent du JSON exporté)
 - Les `alert()` / `confirm()` natifs sont utilisés partout pour les feedbacks utilisateur
 - La semaine affichée dans l'historique est relative à `currentWeekOffset` (navigation ±1 semaine)
